@@ -18,6 +18,7 @@ import cPickle
 import heapq
 from utils.blob import im_list_to_blob
 import os
+import pickle
 
 def _get_image_blob(im):
     """Converts an image into a network input.
@@ -273,6 +274,7 @@ def test_net(net, imdb):
     _t = {'im_detect' : Timer(), 'misc' : Timer()}
 
     roidb = imdb.roidb
+    
     for i in xrange(num_images):
         im = cv2.imread(imdb.image_path_at(i))
         _t['im_detect'].tic()
@@ -314,11 +316,17 @@ def test_net(net, imdb):
     for j in xrange(1, imdb.num_classes):
         for i in xrange(num_images):
             inds = np.where(all_boxes[j][i][:, -1] > thresh[j])[0]
-            all_boxes[j][i] = all_boxes[j][i][inds, :]
+            all_boxes[j][i] = all_boxes[j][i][inds, :]  
 
     det_file = os.path.join(output_dir, 'detections.pkl')
     with open(det_file, 'wb') as f:
         cPickle.dump(all_boxes, f, cPickle.HIGHEST_PROTOCOL)
+
+    # Following is used if detection.pkl has already existed
+    # print det_file
+    #    with open(det_file, 'rb') as f:
+    #	all_boxes = cPickle.load(f)
+    #	all_boxes = pickle.load(f)
 
     print 'Applying NMS to all detections'
     nms_dets = apply_nms(all_boxes, cfg.TEST.NMS)

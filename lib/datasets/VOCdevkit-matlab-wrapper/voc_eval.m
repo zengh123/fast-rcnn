@@ -2,6 +2,8 @@ function res = voc_eval(path, comp_id, test_set, output_dir, rm_res)
 
 VOCopts = get_voc_opts(path);
 VOCopts.testset = test_set;
+print(test_set);
+VOCopts.detrespath = '/home/zengh/libs/fast-rcnn/output/detection/%s_det_test_%s.txt’
 
 for i = 1:length(VOCopts.classes)
   cls = VOCopts.classes{i};
@@ -29,7 +31,7 @@ prec = [];
 ap = 0;
 ap_auc = 0;
 
-do_eval = (str2num(year) <= 2007) | ~strcmp(test_set, 'test');
+do_eval = (str2num(year) <= 2007) | ~strcmp(test_set, 'val');
 if do_eval
   % Bug in VOCevaldet requires that tic has been called first
   tic;

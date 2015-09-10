@@ -11,13 +11,14 @@
 
 import _init_paths
 from fast_rcnn.train import get_training_roidb, train_net
-from fast_rcnn.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
-from datasets.factory import get_imdb
+from fast_rcnn.config import cfg, cfg_from_file, get_output_dir
+from datasets.factory import get_imdb,list_imdbs
 import caffe
 import argparse
 import pprint
 import numpy as np
 import sys
+import os
 
 def parse_args():
     """
@@ -45,9 +46,6 @@ def parse_args():
     parser.add_argument('--rand', dest='randomize',
                         help='randomize (do not use a fixed seed)',
                         action='store_true')
-    parser.add_argument('--set', dest='set_cfgs',
-                        help='set config keys', default=None,
-                        nargs=argparse.REMAINDER)
 
     if len(sys.argv) == 1:
         parser.print_help()
@@ -57,6 +55,10 @@ def parse_args():
     return args
 
 if __name__ == '__main__':
+    import sys
+    from IPython.core import ultratb
+    sys.excepthook = ultratb.FormattedTB(call_pdb=True)
+
     args = parse_args()
 
     print('Called with args:')
@@ -64,8 +66,6 @@ if __name__ == '__main__':
 
     if args.cfg_file is not None:
         cfg_from_file(args.cfg_file)
-    if args.set_cfgs is not None:
-        cfg_from_list(args.set_cfgs)
 
     print('Using config:')
     pprint.pprint(cfg)
@@ -82,11 +82,33 @@ if __name__ == '__main__':
 
     imdb = get_imdb(args.imdb_name)
     print 'Loaded dataset `{:s}` for training'.format(imdb.name)
-    roidb = get_training_roidb(imdb)
+
+    # -----------
+    #code below is only used in debug. By setting number after > and <, we can select
+    #part of dataset and makes the debug process faster
+    k_temp = len(imdb._image_index)
+    print k_temp    
+    if (args.imdb_name == 'coco_train2014'):
+        for i in range(0,k_temp):
+            if imdb._image_index[k_temp - i -1] < 0:
+                 del imdb._image_index[k_temp- i -1]
+    else:
+       for i in range(0,k_temp):
+           if int(imdb._image_index[k_temp - i -1]) < 0:         
+               print imdb._image_index[k_temp- i -1]
+               del imdb._image_index[k_temp- i -1]
+           elif int(imdb._image_index[k_temp - i -1]) > 20000:
+               print imdb._image_index[k_temp- i -1]
+               del imdb._image_index[k_temp- i -1]
+    print 'imdb._image_index : new len after picking up:'
+    print len(imdb._image_index)
+    print ''
+    # -----------
 
     output_dir = get_output_dir(imdb, None)
+    roidb = get_training_roidb(imdb)
     print 'Output will be saved to `{:s}`'.format(output_dir)
-
+    print 'max iter in train_net'
     train_net(args.solver, roidb, output_dir,
               pretrained_model=args.pretrained_model,
               max_iters=args.max_iters)
